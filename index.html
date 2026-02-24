@@ -6,34 +6,331 @@
 <title>IVF Copilot MVP</title>
 
 <style>
-body {
-  font-family: system-ui;
-  max-width: 700px;
-  margin: 40px auto;
+:root{
+  --bg: #f5f5f7;
+  --card: rgba(255,255,255,.78);
+  --text: #1d1d1f;
+  --muted: rgba(29,29,31,.62);
+  --line: rgba(0,0,0,.08);
+
+  --accent: #007aff;        /* iOS blue */
+  --accent2: rgba(0,122,255,.12);
+
+  --radius: 18px;
+  --shadow: 0 18px 50px rgba(0,0,0,.08);
+  --shadow2: 0 1px 0 rgba(0,0,0,.04);
 }
-.card {
-  border:1px solid #ddd;
-  padding:16px;
-  border-radius:12px;
-  margin-bottom:16px;
+
+*{ box-sizing:border-box; }
+
+html, body { height: 100%; }
+
+body{
+  margin:0;
+  padding: 40px 16px 64px;
+  background:
+    radial-gradient(900px 450px at 10% 0%, rgba(0,122,255,.18), transparent 60%),
+    radial-gradient(700px 380px at 90% 12%, rgba(52,199,89,.14), transparent 55%),
+    var(--bg);
+  color: var(--text);
+
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+               "SF Pro Display","SF Pro Text","Apple SD Gothic Neo","Noto Sans KR", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
-textarea, input, select, button {
+
+main{
+  max-width: 760px;
+  margin: 0 auto;
+}
+
+h1{
+  font-size: 28px;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  margin: 0 0 10px;
+}
+
+.subtitle{
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.5;
+  margin: 0 0 18px;
+}
+
+.badge{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: var(--accent2);
+  border: 1px solid rgba(0,122,255,.18);
+  color: rgba(0,122,255,.95);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.card{
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 18px;
+  margin: 14px 0;
+  box-shadow: var(--shadow2), var(--shadow);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+h2{
+  font-size: 16px;
+  letter-spacing: -0.01em;
+  margin: 0 0 12px;
+}
+
+label{
+  display:block;
+  margin-top: 12px;
+  font-size: 12px;
+  color: var(--muted);
+  letter-spacing: 0.01em;
+}
+
+input, select, textarea{
   width:100%;
-  margin-top:8px;
-  padding:10px;
+  margin-top: 8px;
+  padding: 12px 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(0,0,0,.10);
+  background: rgba(255,255,255,.92);
+  color: var(--text);
+  outline: none;
+  transition: box-shadow .18s ease, border-color .18s ease, transform .06s ease;
 }
-pre {
-  background:#f6f6f6;
-  padding:12px;
-  border-radius:10px;
-  white-space:pre-wrap;
+
+textarea{
+  min-height: 92px;
+  resize: vertical;
+}
+
+input:focus, select:focus, textarea:focus{
+  border-color: rgba(0,122,255,.55);
+  box-shadow: 0 0 0 4px rgba(0,122,255,.16);
+}
+
+button{
+  width:100%;
+  margin-top: 12px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(0,0,0,.08);
+  background: var(--accent);
+  color: #fff;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  cursor:pointer;
+  transition: transform .06s ease, filter .18s ease, box-shadow .18s ease;
+  box-shadow: 0 10px 24px rgba(0,122,255,.22);
+}
+
+button:hover{ filter: brightness(1.03); }
+button:active{ transform: translateY(1px); }
+
+button.secondary{
+  background: rgba(255,255,255,.9);
+  color: var(--text);
+  border: 1px solid rgba(0,0,0,.10);
+  box-shadow: 0 10px 24px rgba(0,0,0,.06);
+}
+
+pre{
+  margin: 10px 0 0;
+  padding: 14px;
+  border-radius: 16px;
+  border: 1px solid rgba(0,0,0,.08);
+  background: rgba(255,255,255,.88);
+  color: var(--text);
+  white-space: pre-wrap;
+  line-height: 1.55;
+}
+
+.small{
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+hr.sep{
+  border:0;
+  height:1px;
+  background: rgba(0,0,0,.08);
+  margin: 14px 0;
+}
+
+#dash{
+  font-size: 14px;
+  color: var(--muted);
+}
+
+@media (max-width: 420px){
+  body{ padding-top: 28px; }
+  h1{ font-size: 24px; }
+  .card{ padding: 16px; border-radius: 16px; }
+}
+/* ===== Apple-ish motion polish ===== */
+.card{
+  transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+}
+.card:hover{
+  transform: translateY(-2px);
+  border-color: rgba(0,0,0,.10);
+  box-shadow: 0 22px 70px rgba(0,0,0,.10), 0 1px 0 rgba(0,0,0,.04);
+}
+
+button{
+  transition: transform .08s ease, filter .18s ease, box-shadow .18s ease;
+}
+button:active{
+  transform: translateY(1px) scale(.99);
+  filter: brightness(.98);
+}
+
+input, select, textarea{
+  transition: box-shadow .18s ease, border-color .18s ease, transform .08s ease;
+}
+input:focus, select:focus, textarea:focus{
+  transform: scale(1.01);
+}
+
+/* nicer selection */
+::selection{
+  background: rgba(0,122,255,.22);
+}
+
+/* subtle divider inside cards */
+.section-title{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+}
+.section-title .hint{
+  font-size:12px;
+  color: rgba(29,29,31,.55);
+}
+/* ===== Health-ish UI ===== */
+.header{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  margin-bottom: 18px;
+}
+
+.header-top{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:12px;
+}
+
+.title-wrap h1{ margin:0; }
+.title-wrap .subtitle{
+  margin:0;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.chips{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  margin-top: 2px;
+}
+
+.chip{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  border:1px solid rgba(0,0,0,.08);
+  background: rgba(255,255,255,.72);
+  color: rgba(29,29,31,.80);
+  font-size: 12px;
+  font-weight: 600;
+  box-shadow: 0 8px 18px rgba(0,0,0,.06);
+}
+
+.chip.blue{
+  border-color: rgba(0,122,255,.20);
+  background: rgba(0,122,255,.10);
+  color: rgba(0,122,255,.95);
+}
+.chip.green{
+  border-color: rgba(52,199,89,.24);
+  background: rgba(52,199,89,.10);
+  color: rgba(18,124,48,.95);
+}
+.chip.orange{
+  border-color: rgba(255,149,0,.24);
+  background: rgba(255,149,0,.12);
+  color: rgba(140,78,0,.95);
+}
+
+.grid2{
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+@media (max-width: 640px){
+  .grid2{ grid-template-columns: 1fr; }
+}
+
+.kpi{
+  padding: 14px;
+  border-radius: 16px;
+  border: 1px solid rgba(0,0,0,.08);
+  background: rgba(255,255,255,.70);
+}
+.kpi .kpi-title{
+  font-size: 12px;
+  color: var(--muted);
+  margin:0;
+}
+.kpi .kpi-value{
+  margin:6px 0 0;
+  font-size: 18px;
+  font-weight: 750;
+  letter-spacing: -0.02em;
+}
+
+.helper{
+  margin-top: 10px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
 }
 </style>
 </head>
 
 <body>
+<main>
+  <div class="header">
+  <div class="header-top">
+    <div class="title-wrap">
+      <h1>IVF Copilot</h1>
+      <p class="subtitle">DPT 계산 → 증상/불안 질문 → AI 답변 (의료 조언 아님)</p>
+    </div>
+  </div>
 
-<h1>IVF Copilot (MVP)</h1>
+  <div class="chips">
+    <span class="chip blue">의료 조언 아님</span>
+    <span class="chip green">최근 기록은 기기 내 저장</span>
+    <span class="chip orange">응급/위험 신호는 병원</span>
+  </div>
+</div>
+  <!-- 기존 카드들 그대로 -->
 
 <div class="card">
 <h2>1) 내 정보 입력</h2>
@@ -50,12 +347,27 @@ pre {
 <label>이식일</label>
 <input id="transfer_date" type="date">
 
-<button onclick="save()">저장</button>
+<button class="secondary" onclick="save()">저장</button>
 </div>
 
 <div class="card">
-<h2>2) 오늘 상태</h2>
-<div id="dash"></div>
+  <h2>2) 오늘 상태</h2>
+
+  <div class="grid2">
+    <div class="kpi">
+      <p class="kpi-title">오늘은</p>
+      <p class="kpi-value" id="dash">—</p>
+    </div>
+
+    <div class="kpi">
+      <p class="kpi-title">안내</p>
+      <p class="kpi-value" style="font-size:13px; font-weight:650; color:rgba(29,29,31,.72); line-height:1.4;">
+        불편이 심하거나 출혈/고열 등은 바로 병원에 문의하세요.
+      </p>
+    </div>
+  </div>
+
+  <div class="helper">DPT는 “이식일 기준 경과일”로 계산됩니다.</div>
 </div>
 
 <div class="card">
@@ -97,8 +409,7 @@ function renderDash(){
   const d = JSON.parse(localStorage.getItem(LS) || "{}");
   if(!d.transfer_date) return;
   const diff = Math.floor((Date.now() - new Date(d.transfer_date)) / 86400000);
-  dash.innerText = `오늘은 ${diff < 0 ? 0 : diff} DPT`;
-}
+dash.innerText = `${diff<0?0:diff} DPT`;}
 
 async function ask(){
   const q = (question.value || "").trim();
@@ -186,18 +497,6 @@ function escapeHtml(str){
 
 
 </script>
-document.getElementById("leadBtn")?.addEventListener("click", () => {
-  const v = (document.getElementById("lead").value || "").trim();
-  const msg = document.getElementById("leadMsg");
-  if(!v){
-    msg.textContent = "연락처를 입력해 주세요.";
-    return;
-  }
-  const leads = JSON.parse(localStorage.getItem("ivf_leads") || "[]");
-  leads.unshift({ ts: Date.now(), contact: v });
-  localStorage.setItem("ivf_leads", JSON.stringify(leads.slice(0,50)));
-  msg.textContent = "신청 완료! 프리미엄 오픈되면 알려드릴게요.";
-});
-
+</main>
 </body>
 </html>
