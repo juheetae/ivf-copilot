@@ -145,6 +145,46 @@ async function ask(){
 }
 
 renderDash();
+function saveHistory(q, a, dpt){
+  const KEY = "ivf_history";
+  const h = JSON.parse(localStorage.getItem(KEY) || "[]");
+  h.unshift({ ts: Date.now(), dpt, q, a });
+  localStorage.setItem(KEY, JSON.stringify(h.slice(0, 10)));
+}
+
+function renderHistory(){
+  const KEY = "ivf_history";
+  const h = JSON.parse(localStorage.getItem(KEY) || "[]");
+  const box = document.getElementById("historyBox");
+  if(!box) return;
+
+  if(h.length === 0){
+    box.innerHTML = '<div style="color:#666;">(아직 없음)</div>';
+    return;
+  }
+
+  box.innerHTML = h.map(item => `
+    <div class="card" style="margin-top:12px;">
+      <div style="color:#666; font-size:12px;">
+        ${new Date(item.ts).toLocaleString("ko-KR")} · ${item.dpt} DPT
+      </div>
+      <div style="margin-top:6px;"><b>Q.</b> ${escapeHtml(item.q)}</div>
+      <div style="margin-top:6px; white-space:pre-wrap;"><b>A.</b>\n${escapeHtml(item.a)}</div>
+    </div>
+  `).join("");
+}
+
+// XSS 방지용 (답변에 특수문자 있어도 안전)
+function escapeHtml(str){
+  return String(str)
+    .replaceAll("&","&amp;")
+    .replaceAll("<","&lt;")
+    .replaceAll(">","&gt;")
+    .replaceAll('"',"&quot;")
+    .replaceAll("'","&#039;");
+}
+
+
 </script>
 document.getElementById("leadBtn")?.addEventListener("click", () => {
   const v = (document.getElementById("lead").value || "").trim();
