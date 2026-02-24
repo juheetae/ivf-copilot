@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>IVF Copilot MVP</title>
+
+<style>
+body {
+  font-family: system-ui;
+  max-width: 700px;
+  margin: 40px auto;
+}
+.card {
+  border:1px solid #ddd;
+  padding:16px;
+  border-radius:12px;
+  margin-bottom:16px;
+}
+textarea, input, select, button {
+  width:100%;
+  margin-top:8px;
+  padding:10px;
+}
+pre {
+  background:#f6f6f6;
+  padding:12px;
+  border-radius:10px;
+  white-space:pre-wrap;
+}
+</style>
+</head>
+
+<body>
+
+<h1>IVF Copilot (MVP)</h1>
+
+<div class="card">
+<h2>1) 내 정보 입력</h2>
+
+<label>나이</label>
+<input id="age" type="number">
+
+<label>배아 일수</label>
+<select id="embryo_day">
+<option value="5">5일배아</option>
+<option value="3">3일배아</option>
+</select>
+
+<label>이식일</label>
+<input id="transfer_date" type="date">
+
+<button onclick="save()">저장</button>
+</div>
+
+<div class="card">
+<h2>2) 오늘 상태</h2>
+<div id="dash"></div>
+</div>
+
+<div class="card">
+<h2>3) 질문하기</h2>
+<textarea id="question"></textarea>
+<button onclick="ask()">AI에게 물어보기</button>
+<div id="paywall" class="card" style="display:none;">
+  <h3>오늘 무료 질문을 다 썼어요</h3>
+  <p style="color:#666;">프리미엄(준비중)을 열면 무제한 질문 + 이식일별 가이드가 제공돼요.</p>
+
+  <label>알림 받기(이메일 또는 카톡 아이디)</label>
+  <input id="lead" type="text" placeholder="예: email@domain.com 또는 카톡ID" />
+  <button id="leadBtn">알림 신청</button>
+
+  <p id="leadMsg" style="color:#666; margin-top:8px;"></p>
+</div>
+
+<h3>답변</h3>
+<pre id="answerBox">(아직 없음)</pre>
+
+<h3>최근 기록</h3>
+<div id="historyBox"></div>
+</div>
+
+<script>
+const LS="ivf_user";
+const FREE_DAILY_LIMIT = 2;
+
+function todayKey(){
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth()+1).padStart(2,"0");
+  const day = String(d.getDate()).padStart(2,"0");
+  return `ivf_daily_count_${y}-${m}-${day}`;
+}
+
+function getTodayCount(){
+  return Number(localStorage.getItem(todayKey()) || "0");
+}
+
+function incTodayCount(){
+  const next = getTodayCount() + 1;
+  localStorage.setItem(todayKey(), String(next));
+  return next;
+}
+
+function showPaywall(){
+  document.getElementById("paywall").style.display = "block";
+}
+function hidePaywall(){
+  document.getElementById("paywall").style.display = "none";
+}
+
+function save(){
+ const data={
+   age:age.value,
+   embryo_day:embryo_day.value,
+   transfer_date:transfer_date.value
+ };
+ localStorage.setItem(LS,JSON.stringify(data));
+ renderDash();
+}
+
+function renderDash(){
+ const d=JSON.parse(localStorage.getItem(LS)||"{}");
+ if(!d.transfer_date) return;
+ const diff=Math.floor((Date.now()-new Date(d.transfer_date))/86400000);
+ dash.innerText=`오늘은 ${diff<0?0:diff} DPT`;
+}
+
+async function ask(){
+
+  const q = (question.value || "").trim();
+  if(!q){ alert("질문을 입력해주세요"); return; }
+
+  hidePaywall();
+  const count = getTodayCount();
+  if(count >= FREE_DAILY_LIMIT){
+    showPaywall();
+    answerBox.textContent = "오늘은 무료 질문 2회까지 가능해요 🙂";
+    return;
+  }
+
+  answerBox.textContent = "생성중...";
+
+  const d = JSON.parse(localStorage.getItem(LS) || "{}");
+  const diff = d.transfer_date ? Math.floor((Date.now() - new Date(d.transfer_date)) / 86400000) : 0;
+  const dpt = diff < 0 ? 0 : diff;
+
+  try{
+    const r = await fetch("http://localhost:3000/api/answer", {
+      method: "POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({
+        question: q,
+        dpt: dpt,
+        user_state: d
+      })
+    });
+
+    const data = await r.json();
+    const ans = data.answer || "(빈 응답)";
+    answerBox.textContent = ans;
+incTodayCount();
+    saveHistory(q, ans, dpt);
+    renderHistory();
+  }catch(e){
+    answerBox.textContent = "오류: " + e;
+  }
+}
+
+function saveHistory(q, a, dpt){
+  const NEW_KEY = "ivf_history";
+  const OLD_KEY = "history";
+
+  
+  const raw = localStorage.getItem(NEW_KEY) || localStorage.getItem(OLD_KEY) || "[]";
+  const h = JSON.parse(raw);
+
+  h.unshift({ ts: Date.now(), dpt, q, a });
+  localStorage.setItem(NEW_KEY, JSON.stringify(h.slice(0,10)));
+}
+
+function renderHistory(){
+  const NEW_KEY = "ivf_history";
+  const OLD_KEY = "history";
+
+ 
+  const raw = localStorage.getItem(NEW_KEY) || localStorage.getItem(OLD_KEY) || "[]";
+  const h = JSON.parse(raw);
+
+  const box = document.getElementById("historyBox");
+  if(!box) return;
+
+  if(h.length === 0){
+    box.innerHTML = '<div style="color:#666;">(아직 없음)</div>';
+    return;
+  }
+
+  box.innerHTML = h.map(item => {
+    const q = item.q ?? "";
+    const a = item.a ?? "";
+    const ts = item.ts ? new Date(item.ts).toLocaleString("ko-KR") : "";
+    const dptText = (item.dpt ?? "") !== "" ? ` · ${item.dpt}DPT` : "";
+
+    return `
+      <div class="card">
+        <div style="color:#666; font-size:12px;">${ts}${dptText}</div>
+        <div style="margin-top:6px;"><b>Q.</b> ${q}</div>
+        <div style="margin-top:6px; white-space:pre-wrap;"><b>A.</b>\n${a}</div>
+      </div>
+    `;
+  }).join("");
+}
+
+renderDash();
+renderDash();
+
+
+if(!localStorage.getItem("ivf_history") && localStorage.getItem("history")){
+  localStorage.setItem("ivf_history", localStorage.getItem("history"));
+}
+
+renderHistory();
+
+</script>
+document.getElementById("leadBtn")?.addEventListener("click", () => {
+  const v = (document.getElementById("lead").value || "").trim();
+  const msg = document.getElementById("leadMsg");
+  if(!v){
+    msg.textContent = "연락처를 입력해 주세요.";
+    return;
+  }
+  const leads = JSON.parse(localStorage.getItem("ivf_leads") || "[]");
+  leads.unshift({ ts: Date.now(), contact: v });
+  localStorage.setItem("ivf_leads", JSON.stringify(leads.slice(0,50)));
+  msg.textContent = "신청 완료! 프리미엄 오픈되면 알려드릴게요.";
+});
+
+</body>
+</html>
