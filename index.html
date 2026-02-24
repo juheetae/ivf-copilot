@@ -82,62 +82,27 @@ pre {
 
 <script>
 const LS="ivf_user";
-const FREE_DAILY_LIMIT = 2;
-
-function todayKey(){
-  const d = new Date();
-  const y = d.getFullYear();
-  const m = String(d.getMonth()+1).padStart(2,"0");
-  const day = String(d.getDate()).padStart(2,"0");
-  return `ivf_daily_count_${y}-${m}-${day}`;
-}
-
-function getTodayCount(){
-  return Number(localStorage.getItem(todayKey()) || "0");
-}
-
-function incTodayCount(){
-  const next = getTodayCount() + 1;
-  localStorage.setItem(todayKey(), String(next));
-  return next;
-}
-
-function showPaywall(){
-  document.getElementById("paywall").style.display = "block";
-}
-function hidePaywall(){
-  document.getElementById("paywall").style.display = "none";
-}
 
 function save(){
- const data={
-   age:age.value,
-   embryo_day:embryo_day.value,
-   transfer_date:transfer_date.value
- };
- localStorage.setItem(LS,JSON.stringify(data));
- renderDash();
+  const data={
+    age: age.value,
+    embryo_day: embryo_day.value,
+    transfer_date: transfer_date.value
+  };
+  localStorage.setItem(LS, JSON.stringify(data));
+  renderDash();
 }
 
 function renderDash(){
- const d=JSON.parse(localStorage.getItem(LS)||"{}");
- if(!d.transfer_date) return;
- const diff=Math.floor((Date.now()-new Date(d.transfer_date))/86400000);
- dash.innerText=`오늘은 ${diff<0?0:diff} DPT`;
+  const d = JSON.parse(localStorage.getItem(LS) || "{}");
+  if(!d.transfer_date) return;
+  const diff = Math.floor((Date.now() - new Date(d.transfer_date)) / 86400000);
+  dash.innerText = `오늘은 ${diff < 0 ? 0 : diff} DPT`;
 }
 
 async function ask(){
-
   const q = (question.value || "").trim();
   if(!q){ alert("질문을 입력해주세요"); return; }
-
-  hidePaywall();
-  const count = getTodayCount();
-  if(count >= FREE_DAILY_LIMIT){
-    showPaywall();
-    answerBox.textContent = "오늘은 무료 질문 2회까지 가능해요 🙂";
-    return;
-  }
 
   answerBox.textContent = "생성중...";
 
@@ -146,7 +111,8 @@ async function ask(){
   const dpt = diff < 0 ? 0 : diff;
 
   try{
-    const r = await fetch("/api/answer"), {
+    // ✅ 핵심: 배포/로컬 모두에서 동작하는 상대경로
+    const r = await fetch("/api/answer", {
       method: "POST",
       headers: {"Content-Type":"application/json"},
       body: JSON.stringify({
@@ -156,71 +122,29 @@ async function ask(){
       })
     });
 
+    // 에러 응답도 텍스트로 보여주기
+    if(!r.ok){
+      const t = await r.text();
+      throw new Error(`${r.status} ${t}`);
+    }
+
     const data = await r.json();
     const ans = data.answer || "(빈 응답)";
     answerBox.textContent = ans;
-incTodayCount();
-    saveHistory(q, ans, dpt);
-    renderHistory();
+
+    // (히스토리 저장은 너가 쓰던 함수 있으면 유지)
+    if(typeof saveHistory === "function"){
+      saveHistory(q, ans, dpt);
+    }
+    if(typeof renderHistory === "function"){
+      renderHistory();
+    }
   }catch(e){
-    answerBox.textContent = "오류: " + e;
+    answerBox.textContent = "오류: " + (e?.message || e);
   }
 }
 
-function saveHistory(q, a, dpt){
-  const NEW_KEY = "ivf_history";
-  const OLD_KEY = "history";
-
-  
-  const raw = localStorage.getItem(NEW_KEY) || localStorage.getItem(OLD_KEY) || "[]";
-  const h = JSON.parse(raw);
-
-  h.unshift({ ts: Date.now(), dpt, q, a });
-  localStorage.setItem(NEW_KEY, JSON.stringify(h.slice(0,10)));
-}
-
-function renderHistory(){
-  const NEW_KEY = "ivf_history";
-  const OLD_KEY = "history";
-
- 
-  const raw = localStorage.getItem(NEW_KEY) || localStorage.getItem(OLD_KEY) || "[]";
-  const h = JSON.parse(raw);
-
-  const box = document.getElementById("historyBox");
-  if(!box) return;
-
-  if(h.length === 0){
-    box.innerHTML = '<div style="color:#666;">(아직 없음)</div>';
-    return;
-  }
-
-  box.innerHTML = h.map(item => {
-    const q = item.q ?? "";
-    const a = item.a ?? "";
-    const ts = item.ts ? new Date(item.ts).toLocaleString("ko-KR") : "";
-    const dptText = (item.dpt ?? "") !== "" ? ` · ${item.dpt}DPT` : "";
-
-    return `
-      <div class="card">
-        <div style="color:#666; font-size:12px;">${ts}${dptText}</div>
-        <div style="margin-top:6px;"><b>Q.</b> ${q}</div>
-        <div style="margin-top:6px; white-space:pre-wrap;"><b>A.</b>\n${a}</div>
-      </div>
-    `;
-  }).join("");
-}
-
 renderDash();
-renderDash();
-
-
-if(!localStorage.getItem("ivf_history") && localStorage.getItem("history")){
-  localStorage.setItem("ivf_history", localStorage.getItem("history"));
-}
-
-renderHistory();
-
 </script>
 document.getElementById("leadBtn")?.addEventListener("click", () => {
   const v = (document.getElementById("lead").value || "").trim();
