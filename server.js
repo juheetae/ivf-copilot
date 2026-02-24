@@ -100,6 +100,6 @@ Output must follow exactly this format with headings:
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`Server listening on http://localhost:${PORT}`);
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`LISTENING:${PORT}`);
 });
