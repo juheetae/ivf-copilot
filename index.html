@@ -146,7 +146,7 @@ async function ask(){
   const dpt = diff < 0 ? 0 : diff;
 
   try{
-    const r = await fetch("http://localhost:3000/api/answer", {
+    const r = await fetch("/api/answer"), {
       method: "POST",
       headers: {"Content-Type":"application/json"},
       body: JSON.stringify({
